@@ -234,6 +234,7 @@ static struct cgpu_info *blockerupter_detect_one(struct libusb_device *dev, stru
         // ignore possible 0x00 after reset
         char fix_detect;
         blockerupter_read(blockerupter, &fix_detect, 1);
+        usb_buffer_clear(blockerupter);
 
 	for (i = 0; i < BET_MAXBOARDS; i++) {
 		char detect, answer;
@@ -351,14 +352,15 @@ static void blockerupter_sendjob(struct cgpu_info *blockerupter, int board)
 
 	cgsleep_ms(1);
 	blockerupter_space_mode(blockerupter);
-
+        usb_buffer_clear(blockerupter);
+        
 	answer = 0;
 	err = blockerupter_read(blockerupter, (char *)&answer, 1);
 
 	cgtime(&info->last_job);
 
 	if (err || answer != A_GET) {
-		applog(LOG_ERR, "%s%d: Sync Error", blockerupter->drv->name, blockerupter->device_id);
+            applog(LOG_ERR, "%s%d: Board %d Send Job Failed", blockerupter->drv->name, blockerupter->device_id, board);
 	} else {
 		info->b_info[board].job_count++;
 		applog(LOG_DEBUG, "%s%d: Sent work %d to board %d", blockerupter->drv->name,
@@ -477,7 +479,9 @@ static int64_t blockerupter_scanhash(struct thr_info *thr)
 		     hashes += blockerupter_getresp(blockerupter, i);
 		     break;
 		case A_NO:
-		     break;
+                    break;
+                case A_GET:
+                    break;
 		default:
 		     applog(LOG_ERR, "%s%d: Unexpected value %02x received", blockerupter->drv->name,
 			    blockerupter->device_id, answer);
