@@ -231,6 +231,9 @@ static struct cgpu_info *blockerupter_detect_one(struct libusb_device *dev, stru
 	}
 	cgsleep_ms(5000);
 
+        // ignore possible 0x00 after reset
+        char fix_detect;
+        blockerupter_read(blockerupter, &fix_detect, 1);
 
 	for (i = 0; i < BET_MAXBOARDS; i++) {
 		char detect, answer;
@@ -238,11 +241,16 @@ static struct cgpu_info *blockerupter_detect_one(struct libusb_device *dev, stru
 		answer = 0;
 		detect = C_ASK | (uint8_t)i;
 		blockerupter_send(blockerupter, &detect, 1);
-		blockerupter_read(blockerupter, &answer, 1);
-		if (answer == A_WAL) {
+                blockerupter_read(blockerupter, &answer, 1);
+		if (answer == A_WAL || answer == A_YES || answer == A_NO) {
 		     applog(LOG_DEBUG, "BlockErupter found Board: %d", i);
 		     info->boards[i] = 1;
 		     info->found++;
+                     // ignore incoming response from board when detecting
+                     if(answer == A_YES) {
+                         char resp[BET_RESP_SZ];
+                         blockerupter_read(blockerupter, resp, BET_RESP_SZ);
+                     }
 		} else {
 		     applog(LOG_DEBUG, "BlockErupter missing board: %d, received %02x",
 			    i, answer);
