@@ -132,7 +132,7 @@ static void blockerupter_setclock(struct cgpu_info *blockerupter, uint8_t clock)
 	err = blockerupter_send(blockerupter, &command, 1);
 	if (!err)
 		applog(LOG_DEBUG, "%s%d: Set Clock to %d MHz", blockerupter->drv->name,
-		       blockerupter->device_id, (clock + 1) * 10 / 2);
+		       blockerupter->device_id, (clock + 1) * 10 );
 }
 
 static void blockerupter_setdiff(struct cgpu_info *blockerupter, int diff)
